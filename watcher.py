@@ -103,7 +103,7 @@ def scan(days):
         for day in weekends(datetime.now(BERLIN).date(), days):
             response = page.goto(f'{CLUB}?date={day.isoformat()}', wait_until='domcontentloaded', timeout=45000)
             if not response or response.status >= 400:
-                raise RuntimeError('Playtomic-Seite konnte nicht geladen werden; keine Verfügbarkeitsaussage möglich.')
+                                raise RuntimeError(f'Playtomic: HTTP {response.status if response else "keine Antwort"}; Seitentitel: {page.title()}')
             page.get_by_role('heading', name='Book a court in Padelhaus Bremen', exact=True).wait_for()
             deny = page.locator('#deny')
             if deny.is_visible():

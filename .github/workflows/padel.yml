@@ -18,7 +18,7 @@ concurrency:
 jobs:
   check:
     if: github.event_name == 'workflow_dispatch' || vars.ENABLED == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4

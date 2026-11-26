@@ -103,7 +103,7 @@ def scan(days):
         for day in weekends(datetime.now(BERLIN).date(), days):
             response = page.goto(f'{CLUB}?date={day.isoformat()}', wait_until='domcontentloaded', timeout=45000)
             if not response or response.status >= 400:
-                                raise RuntimeError(f'Playtomic: HTTP {response.status if response else "keine Antwort"}; Seitentitel: {page.title()}')
+                raise RuntimeError('Playtomic-Seite konnte nicht geladen werden; keine Verfügbarkeitsaussage möglich.')
             page.get_by_role('heading', name='Book a court in Padelhaus Bremen', exact=True).wait_for()
             deny = page.locator('#deny')
             if deny.is_visible():
@@ -114,7 +114,7 @@ def scan(days):
             # Ensure hydration has created the actual calendar before reading it.
             page.locator('input[type="date"]').first.wait_for(state='attached')
             page.get_by_text('Loading…', exact=True).wait_for(state='hidden', timeout=45000)
-            page.wait_for_load_state('networkidle', timeout=30000)
+            page.get_by_text('available', exact=True).wait_for(state='visible', timeout=15000)
             if page.locator('input[type="date"]').first.input_value() != day.isoformat():
                 raise RuntimeError('Angezeigtes Datum stimmt nicht mit dem angefragten Tag überein.')
             if not page.get_by_text('available', exact=True).count():
@@ -231,5 +231,5 @@ if __name__ == '__main__':
         if isinstance(exc, RuntimeError):
             print(str(exc))
         else:
-                     print(f'Prüfung abgebrochen ({type(exc).__name__}): {exc}')
+               print(f'Prüfung abgebrochen ({type(exc).__name__}): {exc}')
         raise SystemExit(1)

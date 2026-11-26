@@ -231,5 +231,5 @@ if __name__ == '__main__':
         if isinstance(exc, RuntimeError):
             print(str(exc))
         else:
-            print(f'Prüfung abgebrochen ({type(exc).__name__}). Keine falsche Freimeldung gesendet.')
+                     print(f'Prüfung abgebrochen ({type(exc).__name__}): {exc}')
         raise SystemExit(1)

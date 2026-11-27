@@ -1,47 +1,63 @@
 name: Padel-Wecker
+
 on:
-  schedule:
-    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       mode:
-        description: 'setup = Telegram koppeln; diagnose = nur lesen; check = prüfen und melden'
+        description: 'diagnose = nur lesen; check = prüfen und melden; setup = Telegram koppeln'
         required: true
         default: diagnose
         type: choice
-        options: [setup, diagnose, check]
+        options: [diagnose, check, setup]
+
 permissions:
   contents: write
+
 concurrency:
   group: padelwecker
   cancel-in-progress: false
+
 jobs:
   check:
-    if: github.event_name == 'workflow_dispatch' || vars.ENABLED == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Python-Pakete installieren
+        run: python -m pip install -r requirements.txt
+
       - name: Tests
         run: python -m unittest -v
-      - name: Browser installieren
+
+      - name: Browser und virtuellen Bildschirm installieren
         if: inputs.mode != 'setup'
         run: |
-          pip install -r requirements.txt
           python -m playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth
+
       - name: Prüfen oder koppeln
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_PAIR_CODE: ${{ secrets.TELEGRAM_PAIR_CODE }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          BOOKING_DAYS: ${{ vars.BOOKING_DAYS }}
-          RUN_MODE: ${{ inputs.mode || 'check' }}
-        run: python watcher.py "$RUN_MODE"
+          BOOKING_DAYS: '21'
+          RUN_MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$RUN_MODE" = "setup" ]; then
+            python watcher.py "$RUN_MODE"
+          else
+            xvfb-run -a python watcher.py "$RUN_MODE"
+          fi
+
       - name: Gemeldete Treffer merken
-        if: always() && (inputs.mode == 'check' || github.event_name == 'schedule')
+        if: always() && inputs.mode == 'check'
         run: |
           if [ -f state.json ]; then
             git config user.name 'Padel-Wecker'

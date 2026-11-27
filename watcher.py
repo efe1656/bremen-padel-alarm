@@ -124,6 +124,12 @@ def scan(days, club="padelhaus"):
                 config['url'] = page.url.split('?')[0]
             response = page.goto(f"{config['url']}?date={day.isoformat()}", wait_until='domcontentloaded', timeout=45000)
             if not response or response.status >= 400:
+                status = response.status if response else 'keine Antwort'
+                print("HTTP-STATUS:", status)
+                print("SEITENTITEL:", page.title())
+                print("FEHLERSEITE:")
+                print(page.locator('body').inner_text(timeout=10000)[:4000])
+                raise RuntimeError('Seitenabruf fehlgeschlagen; Diagnose steht darüber.')
                 raise RuntimeError(f"{config['name']}: HTTP {response.status if response else 'keine Antwort'}; {page.title()}")
             page.get_by_role('heading', level=1).filter(has_text=config['name']).wait_for()
             deny = page.locator('#deny')
